@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "spatial_requests"
+version = "0.1.0"
+description = ""
+authors = ["Georg Schuppe <georg.schuppe@gmail.com>"]
+license = "LICENSE"
+readme = "README.md"
+packages = [{include = "spatial_requests"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+spatial-spec = "^0.1.1"
+matplotlib = "^3.7.1"
+numpy = "^1.24.3"
+lark = "^1.1.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
