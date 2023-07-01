@@ -1,4 +1,6 @@
-import numpy as np
+from spatial_requests.spatial_request_planner import SpatialRequestPlanner
 
 def main():
-    print("HI")
+    spec = "(F (blue leftof red))"
+    planner = SpatialRequestPlanner(spec)
+    print("success")
