@@ -1,3 +1,4 @@
 import numpy as np
 
-print("Hi")
+def main():
+    print("HI")

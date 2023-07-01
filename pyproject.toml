@@ -5,10 +5,12 @@ description = ""
 authors = ["Georg Schuppe <georg.schuppe@gmail.com>"]
 license = "LICENSE"
 readme = "README.md"
-packages = [{include = "spatial_requests"}]
+
+[tool.poetry.scripts]
+main = "spatial_requests.main:main"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 spatial-spec = "^0.1.1"
 matplotlib = "^3.7.1"
 numpy = "^1.24.3"
