@@ -12,6 +12,9 @@ def main():
                         proj_points=np.asarray([[-1, -0.5], [-0.7, 0.0], [-1.3, 0.0]])),
     ]
 
-    planner = SpatialRequestPlanner(spec, graspable_objects, min_x=-3, max_x=3, min_y=-3, max_y=3, step_size=0.05)
+    bounds = [-3,3,-3,3]
+    planner = SpatialRequestPlanner(spec, graspable_objects, bounds, samples=500)
     command = planner.get_next_step()
     print(command.type)
+    print(command.name)
+    print(command.new_pos)
