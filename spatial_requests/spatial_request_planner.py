@@ -224,7 +224,7 @@ class SpatialRequestPlanner:
             
             # try all objects relevant to the current targets
             for obj_name in self.get_relevant_objects(target_set):
-                self.get_logger().info("Considering " + obj_name + "...")
+                print("Considering ", obj_name, "...")
                 relevant_obj = self.graspable_objects[obj_name]
                 composite_constraint_map = self.composite_constraint_map(relevant_obj, constraint_set)
 
