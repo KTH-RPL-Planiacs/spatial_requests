@@ -26,7 +26,7 @@ class SpatialRequestPlanner:
 
         self.graspable_objects = {}
         for obj in graspable_objects:
-            self.graspable_objects[obj.id] = obj
+            self.graspable_objects[obj.obj_id] = obj
 
         spec_tree = self.spatial.parse(spec)
         self.planner.tree_to_dfa(spec_tree)
@@ -38,7 +38,7 @@ class SpatialRequestPlanner:
         self.gx, self.gy = np.meshgrid(self.rx, self.ry)
 
         # object initialization - spatial variables
-        for grasp_obj in self.graspable_objects:
+        for obj_id, grasp_obj in self.graspable_objects.items():
             self.spatial.assign_variable(grasp_obj.name, grasp_obj.get_static_shape())
 
         # this dictionary contains a variable name to spatial tree mapping
@@ -73,8 +73,6 @@ class SpatialRequestPlanner:
         # register observation
         self.planner.dfa_step(self.create_planner_obs(), self.trace_ap)
         
-
-
 
     def get_next_step(self) -> Command:
         target_set, constraint_set, edge = self.planner.plan_step()

@@ -6,13 +6,13 @@ def main():
     spec = "(F (blue leftof red))"
 
     graspable_objects = [
-        ProjectedObject(object_id=0,
+        ProjectedObject(obj_id=0,
                         name='blue',
-                        proj_points=[[0, -0.5], [0.3, 0], [-0.3, 0]]),
-        ProjectedObject(object_id=1,
+                        proj_points=np.asarray([[0.0, -0.5], [0.3, 0.0], [-0.3, 0.0]])),
+        ProjectedObject(obj_id=1,
                         name='red',
-                        proj_points=[[-1, -0.5], [-0.7, 0], [-1.3, 0]]
-                        ),
+                        proj_points=np.asarray([[-1, -0.5], [-0.7, 0.0], [-1.3, 0.0]])),
     ]
 
     planner = SpatialRequestPlanner(spec, graspable_objects, min_x=-3, max_x=3, min_y=-3, max_y=3, step_size=0.05)
+    planner.get_next_step()
