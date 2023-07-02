@@ -6,6 +6,7 @@ import numpy as np
 class CommandType(Enum):
     EXECUTE = 1
     REQUEST = 2
+    IMPOSSIBLE = 3
 
 class Command:
 
@@ -21,7 +22,11 @@ class SpatialRequestPlanner:
     def __init__(self, spec, graspable_objects, min_x, max_x, min_y, max_y, step_size):
         self.spatial = Spatial(quantitative=True)
         self.planner = AutomatonPlanner()
-        self.graspable_objects = graspable_objects
+        self.pruned_edges = []
+
+        self.graspable_objects = {}
+        for obj in graspable_objects:
+            self.graspable_objects[obj.id] = obj
 
         spec_tree = self.spatial.parse(spec)
         self.planner.tree_to_dfa(spec_tree)
@@ -46,8 +51,7 @@ class SpatialRequestPlanner:
         self.planner.reset_state()
 
         # before you ask anything from the automaton, provide a initial observation of each spatial sub-formula
-        init_obs = self.create_planner_obs()
-        self.planner.dfa_step(init_obs, self.trace_ap)
+        self.planner.dfa_step(self.create_planner_obs(), self.trace_ap)
 
     def create_planner_obs(self):
         obs = ''
@@ -59,10 +63,23 @@ class SpatialRequestPlanner:
                 obs += '0'
         return obs
 
-    def register_observation(object_list) -> None:
-        pass
+    def register_observation(self, object_list) -> None:
+        # update objects
+        for obj in object_list:
+            id = obj["id"]
+            new_points = obj["new_points"]
+            self.graspable_objects[id].update_points(new_points)
+        
+        # register observation
+        self.planner.dfa_step(self.create_planner_obs(), self.trace_ap)
+        
 
-    def get_next_step() -> Command:
+
+
+    def get_next_step(self) -> Command:
+        target_set, constraint_set, edge = self.planner.plan_step()
+        print("Considering", target_set, "with constraints", constraint_set, "...")
+
         if 1 == 0:
             obj_id = 0
             new_pos = (0,0)
