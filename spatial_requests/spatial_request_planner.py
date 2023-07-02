@@ -22,7 +22,7 @@ class Command:
 
 class SpatialRequestPlanner:
 
-    def __init__(self, spec, graspable_objects, min_x, max_x, min_y, max_y, step_size):
+    def __init__(self, spec, graspable_objects, bounds, samples):
         self.spatial = Spatial(quantitative=True)
         self.planner = AutomatonPlanner()
         self.pruned_edges = []
@@ -37,8 +37,7 @@ class SpatialRequestPlanner:
         print("planner DFA nodes:", len(self.planner.dfa.nodes)," , edges:", len(self.planner.dfa.edges))
 
         # build workspace grid
-        self.rx, self.ry = np.arange(min_x, max_x, step_size), np.arange(min_y, max_y, step_size)
-        self.gx, self.gy = np.meshgrid(self.rx, self.ry)
+        self.sample_points = self.sample_grid_mesh(bounds, samples)
 
         # object initialization - spatial variables
         for name, grasp_obj in self.graspable_objects.items():
@@ -66,6 +65,24 @@ class SpatialRequestPlanner:
                 obs += '0'
         return obs
     
+    def sample_grid_mesh(self, bounds, samples):
+        """Returns a grid mesh of evenly spaced values inside the previously computed bounds"""
+        x_range = np.abs(bounds[1] - bounds[0])
+        y_range = np.abs(bounds[3] - bounds[2])
+        assert x_range > 0
+        assert y_range > 0
+        ratio = x_range / y_range
+        x_steps = np.sqrt(samples * ratio)
+        y_steps = samples / x_steps
+        x_steps = int(x_steps)
+        y_steps = int(y_steps)
+
+        self.rx = np.linspace(bounds[0], bounds[1], num=x_steps)
+        self.ry = np.linspace(bounds[2], bounds[3], num=y_steps)
+        self.gx, self.gy = np.meshgrid(self.rx, self.ry)
+
+        return np.c_[self.gx.ravel(), self.gy.ravel()]
+
     def get_relevant_objects(self, targets):
         """Returns the relevant object names from a set of target boolean configurations"""
         relv_objs = set()
@@ -132,7 +149,7 @@ class SpatialRequestPlanner:
         centroid = object_to_move.shape.center
         grad_values = []
 
-        for pos in self._sample_points:
+        for pos in self.sample_points:
             d = pos - centroid
             virtual_shape = object_to_move.get_displaced_static_shape(d)
             self.spatial.reset_spatial_dict()
@@ -171,7 +188,7 @@ class SpatialRequestPlanner:
         id_x = list_of_coordinates[pos][0]
         id_y = list_of_coordinates[pos][1]
 
-        return np.array([self._rx[id_y], self._ry[id_x]])
+        return np.array([self.rx[id_y], self.ry[id_x]])
     
     def visualize_map(self, target_map, target_point, proj_objs):
         """Plots gradient values"""
