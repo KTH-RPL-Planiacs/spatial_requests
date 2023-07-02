@@ -4,9 +4,8 @@ import copy
 
 class ProjectedObject:
 
-    def __init__(self, name, obj_id, proj_points):
+    def __init__(self, name, proj_points):
         self.name = name
-        self.obj_id = obj_id
         self.proj_points = proj_points
         self.shape = Polygon(self.proj_points, convex_hull=True)
     
