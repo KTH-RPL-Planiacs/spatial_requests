@@ -3,6 +3,7 @@ from spatial_spec.automaton_planning import AutomatonPlanner
 from spatial_requests.command import Command, CommandType
 
 import numpy as np
+import networkx as nx
 from lark import Token
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -197,10 +198,50 @@ class SpatialRequestPlanner:
         plt.colorbar(con)
         plt.show()
 
+    def find_smallest_request(self, node_cur):
+        possible_nodes = {}
+
+        # no previously pruned edges from this node
+        if node_cur not in self.pruned_edges.keys():
+            return None
+        
+        # check if the state behind a pruned edge has a path to an accepting state
+        for candidate in self.pruned_edges[node_cur]:
+            node_cand = candidate["node_to"]
+            if node_cand in self.planner.dfa.graph["acc"]:
+                possible_nodes[node_cand] = candidate["cost"]
+                continue
+
+            for node_acc in self.planner.dfa.graph["acc"]:
+                try:
+                    nx.shortest_path(self.planner.dfa, source=node_cur, target=node_acc)
+                except:
+                    continue
+                else:
+                    # there is a path to an accepting state
+                    possible_nodes[node_cand] = candidate["cost"]
+
+        print("POSSIBLE", possible_nodes)
+
+        # all pruned edges are infeasible
+        if not possible_nodes:
+            return None
+
+        # find the smallest request
+        return min(possible_nodes, key=possible_nodes.get)
+
     def prune_edge(self, edge):
         node_from = edge[0]
         node_to = edge[1]
-        self.pruned_edges[node_from][node_to] = 0 # TODO: implement request cost
+
+        cost = 0 # TODO: implement request cost
+
+        if node_from not in self.pruned_edges.keys():
+            self.pruned_edges[node_from] = []
+        self.pruned_edges[node_from].append({
+            "node_to": node_to,
+            "cost": cost
+        })
 
         self.planner.dfa.remove_edge(node_from, node_to)
 
@@ -220,7 +261,6 @@ class SpatialRequestPlanner:
         target_obj = None
         while True:
             target_set, constraint_set, edge = self.planner.plan_step()
-            print("Considering", target_set, "with constraints", constraint_set, "...")
 
             # we are currently accepting, so we don't need to do anything
             if self.planner.currently_accepting():
@@ -229,9 +269,15 @@ class SpatialRequestPlanner:
 
             # no path to accepting state exists, check for possible request
             if not target_set:
-                # TODO: check for requests
-                print("Specification impossible to satisfy.")
-                return Command(CommandType.NONE)
+                node_current = self.planner.current_state
+                request_node = self.find_smallest_request(node_current)
+                if not request_node:
+                    print("Specification impossible to satisfy anymore.")
+                    return Command(CommandType.NONE)
+                else:
+                    print("Sending a request...")
+                    print("request node:", request_node)
+                    return Command(CommandType.REQUEST, request_str="TODO TODO")
             
             # try all objects relevant to the current targets
             for obj_name in self.get_relevant_objects(target_set):
@@ -256,7 +302,7 @@ class SpatialRequestPlanner:
                     # if we found a point, good!
                     if target_point is not None:
                         print("Found a point for ",obj_name, "!")
-                        self.visualize_map(target_map, target_point, self.graspable_objects)
+                        #self.visualize_map(target_map, target_point, self.graspable_objects)
                         return Command(CommandType.EXECUTE, obj_name=obj_name, new_pos=target_point, edge=edge)
             
             # this edge is completely impossible by moving a single object, we prune the edge from the automaton 
