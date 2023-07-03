@@ -228,33 +228,39 @@ class SpatialRequestPlanner:
         return min(possible_nodes, key=possible_nodes.get)
 
     def generate_request_str(self, node_cur, node_to):
-        target_next_guards = self.orig_dfa.edges[node_cur, node_to]['guard']
-        target_constraint_guards = []
-        for succ in self.orig_dfa.successors(node_cur):
-            if succ != node_to and succ != node_cur:
-                new_guards = self.orig_dfa.edges[self.current_state, succ]['guard']
-                target_constraint_guards.extend(new_guards)
-        target_set = reduce_set_of_guards(target_next_guards)
-        constraint_set = reduce_set_of_guards(target_constraint_guards)
-        
         # use spatial subtrees to create the string
 
         return "TODO TODO"
 
     def prune_edge(self, edge):
-        node_from = edge[0]
+        node_cur = edge[0]
         node_to = edge[1]
 
-        cost = 0 # TODO: implement request cost
+        # obtain guards for the edge and guards for the self loop
+        target_guards = self.orig_dfa.edges[node_cur, node_to]['guard']
+        loop_guards = []
+        for succ in self.orig_dfa.successors(node_cur):
+            if succ == node_cur:
+                new_guards = self.orig_dfa.edges[node_cur, succ]['guard']
+                loop_guards.extend(new_guards)
 
-        if node_from not in self.pruned_edges.keys():
-            self.pruned_edges[node_from] = []
-        self.pruned_edges[node_from].append({
+        # determine request cost
+        cost = len(target_guards[0]) # highest possible cost
+        for t in target_guards:
+            for l in loop_guards:
+                assert len(t) == len(l)
+                cand_cost = sum (t[i] != l[i] for i in range(len(t)))
+                cost = min(cost, cand_cost)
+
+        # insert pruned edge information
+        if node_cur not in self.pruned_edges.keys():
+            self.pruned_edges[node_cur] = []
+        self.pruned_edges[node_cur].append({
             "node_to": node_to,
             "cost": cost
         })
 
-        self.planner.dfa.remove_edge(node_from, node_to)
+        self.planner.dfa.remove_edge(node_cur, node_to)
 
     def register_observation(self, object_list) -> None:
         # update objects
