@@ -12,7 +12,7 @@ class SpatialRequestPlanner:
     def __init__(self, spec, graspable_objects, bounds, samples):
         self.spatial = Spatial(quantitative=True)
         self.planner = AutomatonPlanner()
-        self.pruned_edges = []
+        self.pruned_edges = {}
 
         self.graspable_objects = {}
         for obj in graspable_objects:
@@ -197,6 +197,13 @@ class SpatialRequestPlanner:
         plt.colorbar(con)
         plt.show()
 
+    def prune_edge(self, edge):
+        node_from = edge[0]
+        node_to = edge[1]
+        self.pruned_edges[node_from][node_to] = 0 # TODO: implement request cost
+
+        self.planner.dfa.remove_edge(node_from, node_to)
+
     def register_observation(self, object_list) -> None:
         # update objects
         for obj in object_list:
@@ -250,13 +257,12 @@ class SpatialRequestPlanner:
                     if target_point is not None:
                         print("Found a point for ",obj_name, "!")
                         self.visualize_map(target_map, target_point, self.graspable_objects)
-                        return Command(CommandType.EXECUTE, obj_name=obj_name, new_pos=target_point)
+                        return Command(CommandType.EXECUTE, obj_name=obj_name, new_pos=target_point, edge=edge)
             
             # this edge is completely impossible by moving a single object, we prune the edge from the automaton 
             # (and remember it for future requests)
             if target_obj is None:
                 print("Chosen edge turned out to be impossible. Pruning the edge...")
-                self.pruned_edges.append(edge)
-                self.planner.dfa.remove_edge(edge[0], edge[1])
+                self.prune_edge(edge)
         
     
