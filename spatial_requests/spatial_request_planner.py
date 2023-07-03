@@ -213,15 +213,9 @@ class SpatialRequestPlanner:
                 continue
 
             for node_acc in self.planner.dfa.graph["acc"]:
-                try:
-                    nx.shortest_path(self.planner.dfa, source=node_cur, target=node_acc)
-                except:
-                    continue
-                else:
+                if nx.has_path(self.planner.dfa, source=node_cur, target=node_acc):
                     # there is a path to an accepting state
                     possible_nodes[node_cand] = candidate["cost"]
-
-        print("POSSIBLE", possible_nodes)
 
         # all pruned edges are infeasible
         if not possible_nodes:

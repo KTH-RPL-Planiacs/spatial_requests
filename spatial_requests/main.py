@@ -16,6 +16,5 @@ def main():
     planner = SpatialRequestPlanner(spec, graspable_objects, bounds, samples=500)
     command = planner.get_next_step()
     planner.prune_edge(command.edge)
-    print(planner.pruned_edges)
     command = planner.get_next_step()
     print(command.type)
