@@ -319,12 +319,13 @@ class SpatialRequestPlanner:
 
         self.planner.dfa.remove_edge(node_cur, node_to)
 
+    def currently_accepting(self):
+        return self.planner.currently_accepting()
+
     def register_observation(self, object_list) -> None:
         # update objects
         for obj in object_list:
-            id = obj["id"]
-            new_points = obj["new_points"]
-            self.graspable_objects[id].update_points(new_points)
+            self.graspable_objects[obj.name] = obj
         
         # register observation
         self.planner.dfa_step(self.create_planner_obs(), self.trace_ap)   

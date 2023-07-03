@@ -7,7 +7,8 @@ license = "LICENSE"
 readme = "README.md"
 
 [tool.poetry.scripts]
-main = "spatial_requests.main:main"
+debug = "spatial_requests.debug:main"
+planner_service = "spatial_requests.planner_service:main"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -15,6 +16,7 @@ spatial-spec = "^0.1.1"
 matplotlib = "^3.7.1"
 numpy = "^1.24.3"
 lark = "^1.1.5"
+pyzmq = "^25.1.0"
 
 [build-system]
 requires = ["poetry-core"]
