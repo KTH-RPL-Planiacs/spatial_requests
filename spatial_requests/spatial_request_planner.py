@@ -4,9 +4,11 @@ from spatial_requests.command import Command, CommandType
 from spatial_requests.guard_utility import reduce_set_of_guards
 
 import copy
+import os
 import numpy as np
 import networkx as nx
-from lark import Token
+from lark import Token, Lark
+from lark.reconstruct import Reconstructor
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
@@ -16,6 +18,10 @@ class SpatialRequestPlanner:
         self.spatial = Spatial(quantitative=True)
         self.planner = AutomatonPlanner()
         self.pruned_edges = {}
+
+        grammar = os.path.dirname(__file__) + "/spatial.lark"
+        parser = Lark.open(grammar, parser='lalr', maybe_placeholders=False)
+        self.reconstructor = Reconstructor(parser)
 
         self.graspable_objects = {}
         for obj in graspable_objects:
@@ -228,9 +234,56 @@ class SpatialRequestPlanner:
         return min(possible_nodes, key=possible_nodes.get)
 
     def generate_request_str(self, node_cur, node_to):
-        # use spatial subtrees to create the string
+        # get target and constraint guards
+        target_guards = self.orig_dfa.edges[node_cur, node_to]['guard']
+        constraint_guards = []
+        for succ in self.orig_dfa.successors(node_cur):
+            if succ != node_to and succ != node_cur:
+                constraint_guards.extend(self.orig_dfa.edges[node_cur, succ]['guard'])
 
-        return "TODO TODO"
+        target_guards = reduce_set_of_guards(target_guards)
+        constraint_guards = reduce_set_of_guards(constraint_guards)
+        aps = self.orig_dfa.graph["ap"]
+
+        # use spatial subtrees to create the string
+        request_str = "Please achieve:\n"
+        
+        # target
+        for tg in target_guards:
+            for i in range(len(tg)):
+                if tg[i] == 'X':
+                    continue
+                
+                subtree = self.spatial_vars[aps[i]]
+                subtree_str = self.reconstructor.reconstruct(subtree)
+                if tg[i] == '0':
+                    request_str += 'NOT '
+
+                request_str += subtree_str + '\n'
+            request_str += 'OR\n'
+        request_str = request_str[:-3]
+
+        # constraints
+        if not constraint_guards:
+            return request_str
+            
+        request_str += '\n\n While avoiding:\n'
+
+        for cg in constraint_guards:
+            for i in range(len(cg)):
+                if cg[i] == 'X':
+                    continue
+                
+                subtree = self.spatial_vars[aps[i]]
+                subtree_str = self.reconstructor.reconstruct(subtree)
+                if cg[i] == '0':
+                    request_str += 'NOT '
+
+                request_str += subtree_str + '\n'
+            request_str += 'OR\n'
+        request_str = request_str[:-3]
+
+        return request_str
 
     def prune_edge(self, edge):
         node_cur = edge[0]
@@ -315,7 +368,7 @@ class SpatialRequestPlanner:
                     # if we found a point, good!
                     if target_point is not None:
                         print("Found a point for ",obj_name, "!")
-                        self.visualize_map(target_map, target_point, self.graspable_objects)
+                        #self.visualize_map(target_map, target_point, self.graspable_objects)
                         return Command(CommandType.EXECUTE, obj_name=obj_name, new_pos=target_point, edge=edge)
             
             # this edge is completely impossible by moving a single object, we prune the edge from the automaton 

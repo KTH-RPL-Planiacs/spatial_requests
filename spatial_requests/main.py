@@ -19,5 +19,4 @@ def main():
     command = planner.get_next_step()
     planner.prune_edge(command.edge)
     command = planner.get_next_step()
-    print(command.type)
-    print(planner.pruned_edges)
+    print(command.request_str)

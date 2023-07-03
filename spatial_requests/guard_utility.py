@@ -1,4 +1,7 @@
 def reduce_set_of_guards(sog):
+    if not sog:
+        return {}
+
     # first, resolve all generalizations
     new_sog = set()
     for g in sog:
