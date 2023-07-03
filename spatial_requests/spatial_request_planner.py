@@ -246,7 +246,7 @@ class SpatialRequestPlanner:
         aps = self.orig_dfa.graph["ap"]
 
         # use spatial subtrees to create the string
-        request_str = "Please achieve:\n"
+        request_str = "Please achieve ALL of the following:\n"
         
         # target
         for tg in target_guards:
@@ -257,7 +257,11 @@ class SpatialRequestPlanner:
                 subtree = self.spatial_vars[aps[i]]
                 subtree_str = self.reconstructor.reconstruct(subtree)
                 if tg[i] == '0':
-                    request_str += 'NOT '
+                    #hacky hacky sorry
+                    if subtree_str.startswith("(not"):
+                        subtree_str = subtree_str[4:-1]
+                    else:
+                        subtree_str = 'not(' + subtree_str + ')'
 
                 request_str += subtree_str + '\n'
             request_str += 'OR\n'
@@ -267,7 +271,7 @@ class SpatialRequestPlanner:
         if not constraint_guards:
             return request_str
             
-        request_str += '\n\n While avoiding:\n'
+        request_str += 'While avoiding ANY of the following:\n'
 
         for cg in constraint_guards:
             for i in range(len(cg)):
@@ -277,7 +281,11 @@ class SpatialRequestPlanner:
                 subtree = self.spatial_vars[aps[i]]
                 subtree_str = self.reconstructor.reconstruct(subtree)
                 if cg[i] == '0':
-                    request_str += 'NOT '
+                    #hacky hacky sorry
+                    if subtree_str.startswith("(not"):
+                        subtree_str = subtree_str[4:-1]
+                    else:
+                        subtree_str = 'not(' + subtree_str + ')'
 
                 request_str += subtree_str + '\n'
             request_str += 'OR\n'
@@ -368,7 +376,7 @@ class SpatialRequestPlanner:
                     # if we found a point, good!
                     if target_point is not None:
                         print("Found a point for ",obj_name, "!")
-                        #self.visualize_map(target_map, target_point, self.graspable_objects)
+                        self.visualize_map(target_map, target_point, self.graspable_objects)
                         return Command(CommandType.EXECUTE, obj_name=obj_name, new_pos=target_point, edge=edge)
             
             # this edge is completely impossible by moving a single object, we prune the edge from the automaton 

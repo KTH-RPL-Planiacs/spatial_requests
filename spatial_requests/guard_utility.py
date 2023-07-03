@@ -97,3 +97,10 @@ def compare_obs(test_obs, existing_obs):
             return False
 
     return True
+
+
+def replace_guard_bit(guard, bit, lit):
+    new_guard = list(guard)
+    new_guard[bit] = lit
+    new_guard = ''.join(new_guard)
+    return new_guard
