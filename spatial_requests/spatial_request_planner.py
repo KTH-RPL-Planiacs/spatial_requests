@@ -238,11 +238,7 @@ class SpatialRequestPlanner:
 
         # obtain guards for the edge and guards for the self loop
         target_guards = self.orig_dfa.edges[node_cur, node_to]['guard']
-        loop_guards = []
-        for succ in self.orig_dfa.successors(node_cur):
-            if succ == node_cur:
-                new_guards = self.orig_dfa.edges[node_cur, succ]['guard']
-                loop_guards.extend(new_guards)
+        loop_guards = self.orig_dfa.edges[node_cur, node_cur]['guard'] # we assume this to always exist
 
         # determine request cost
         cost = len(target_guards[0]) # highest possible cost
