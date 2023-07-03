@@ -1,7 +1,9 @@
 from spatial_spec.logic import Spatial
 from spatial_spec.automaton_planning import AutomatonPlanner
 from spatial_requests.command import Command, CommandType
+from spatial_requests.guard_utility import reduce_set_of_guards
 
+import copy
 import numpy as np
 import networkx as nx
 from lark import Token
@@ -21,6 +23,7 @@ class SpatialRequestPlanner:
 
         spec_tree = self.spatial.parse(spec)
         self.planner.tree_to_dfa(spec_tree)
+        self.orig_dfa = copy.deepcopy(self.planner.dfa)
         print("\ntemporal structure:", self.planner.temporal_formula)
         print("planner DFA nodes:", len(self.planner.dfa.nodes)," , edges:", len(self.planner.dfa.edges))
 
@@ -208,13 +211,13 @@ class SpatialRequestPlanner:
         # check if the state behind a pruned edge has a path to an accepting state
         for candidate in self.pruned_edges[node_cur]:
             node_cand = candidate["node_to"]
-            if node_cand in self.planner.dfa.graph["acc"]:
+            if node_cand in self.orig_dfa.graph["acc"]:
                 possible_nodes[node_cand] = candidate["cost"]
                 continue
 
-            for node_acc in self.planner.dfa.graph["acc"]:
-                if nx.has_path(self.planner.dfa, source=node_cur, target=node_acc):
-                    # there is a path to an accepting state
+            for node_acc in self.orig_dfa.graph["acc"]:
+                if nx.has_path(self.orig_dfa, source=node_cur, target=node_acc):
+                    # there is a path to an accepting state, so we can use this candidate
                     possible_nodes[node_cand] = candidate["cost"]
 
         # all pruned edges are infeasible
@@ -223,6 +226,20 @@ class SpatialRequestPlanner:
 
         # find the smallest request
         return min(possible_nodes, key=possible_nodes.get)
+
+    def generate_request_str(self, node_cur, node_to):
+        target_next_guards = self.orig_dfa.edges[node_cur, node_to]['guard']
+        target_constraint_guards = []
+        for succ in self.orig_dfa.successors(node_cur):
+            if succ != node_to and succ != node_cur:
+                new_guards = self.orig_dfa.edges[self.current_state, succ]['guard']
+                target_constraint_guards.extend(new_guards)
+        target_set = reduce_set_of_guards(target_next_guards)
+        constraint_set = reduce_set_of_guards(target_constraint_guards)
+        
+        # use spatial subtrees to create the string
+
+        return "TODO TODO"
 
     def prune_edge(self, edge):
         node_from = edge[0]
@@ -264,14 +281,14 @@ class SpatialRequestPlanner:
             # no path to accepting state exists, check for possible request
             if not target_set:
                 node_current = self.planner.current_state
-                request_node = self.find_smallest_request(node_current)
-                if not request_node:
+                node_request = self.find_smallest_request(node_current)
+                if not node_request:
                     print("Specification impossible to satisfy anymore.")
                     return Command(CommandType.NONE)
                 else:
                     print("Sending a request...")
-                    print("request node:", request_node)
-                    return Command(CommandType.REQUEST, request_str="TODO TODO")
+                    request_str = self.generate_request_str(node_current, node_request)
+                    return Command(CommandType.REQUEST, request_str=request_str)
             
             # try all objects relevant to the current targets
             for obj_name in self.get_relevant_objects(target_set):
