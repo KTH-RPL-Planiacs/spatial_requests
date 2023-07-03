@@ -4,8 +4,9 @@ import copy
 
 class ProjectedObject:
 
-    def __init__(self, name, proj_points):
+    def __init__(self, name, proj_points, color='r'):
         self.name = name
+        self.color = color
         self.proj_points = proj_points
         self.shape = Polygon(self.proj_points, convex_hull=True)
     

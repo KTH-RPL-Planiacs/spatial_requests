@@ -194,7 +194,7 @@ class SpatialRequestPlanner:
                           antialiased=False)
         # plot objects
         for proj_obj in proj_objs.values():
-            proj_obj.shape.plot(ax, label=False, color='r')
+            proj_obj.shape.plot(ax, label=False, color=proj_obj.color)
         # plot target point
         plt.plot(target_point[0], target_point[1], "og")
         plt.autoscale()
@@ -313,7 +313,7 @@ class SpatialRequestPlanner:
                     # if we found a point, good!
                     if target_point is not None:
                         print("Found a point for ",obj_name, "!")
-                        #self.visualize_map(target_map, target_point, self.graspable_objects)
+                        self.visualize_map(target_map, target_point, self.graspable_objects)
                         return Command(CommandType.EXECUTE, obj_name=obj_name, new_pos=target_point, edge=edge)
             
             # this edge is completely impossible by moving a single object, we prune the edge from the automaton 

@@ -3,12 +3,14 @@ from spatial_requests.projected_object import ProjectedObject
 import numpy as np
 
 def main():
-    spec = "(F (blue leftof red))"
+    spec = "(F ((blue leftof red) & (blue dist red <= 1.0)))"
 
     graspable_objects = [
         ProjectedObject(name='blue',
+                        color='b',
                         proj_points=np.asarray([[0.0, -0.5], [0.3, 0.0], [-0.3, 0.0]])),
         ProjectedObject(name='red',
+                        color='r',
                         proj_points=np.asarray([[-1, -0.5], [-0.7, 0.0], [-1.3, 0.0]])),
     ]
 
