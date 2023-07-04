@@ -9,7 +9,7 @@ import numpy as np
 
 def preprocess_points(points):
     """Flips Y axis (opencv) and reshapes data"""
-    shaped = np.squeeze(np.asarray(points), axis=1))
+    shaped = np.squeeze(np.asarray(points), axis=1)
     flipped_y = shaped[:,1] * -1
     return flipped_y
 
