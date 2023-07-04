@@ -261,7 +261,7 @@ class SpatialRequestPlanner:
         aps = self.orig_dfa.graph["ap"]
 
         # use spatial subtrees to create the string
-        request_str = "Please achieve ALL of the following:\n"
+        request_str = "Please help me achieve:\n"
         
         # target
         for tg in target_guards:
@@ -269,6 +269,17 @@ class SpatialRequestPlanner:
                 if tg[i] == 'X':
                     continue
                 
+                # check if constraints have the negation
+                # TODO: WHEN IS THIS NOT SOUND?
+                #redundant = False
+                #for cg in constraint_guards:
+                #    if (tg[i] == '0' and cg[i] == '1') or (tg[i] == '1' and cg[i] == '0'):
+                #        redundant = True
+                #        break
+
+                #if redundant:
+                #    continue
+
                 subtree = self.spatial_vars[aps[i]]
                 subtree_str = self.reconstructor.reconstruct(subtree)
                 if tg[i] == '0':
@@ -279,14 +290,15 @@ class SpatialRequestPlanner:
                         subtree_str = 'not(' + subtree_str + ')'
 
                 request_str += subtree_str + '\n'
-            request_str += 'OR\n'
+            request_str += '\nOR\n'
         request_str = request_str[:-3]
 
+        """
         # constraints
         if not constraint_guards:
             return request_str
             
-        request_str += 'While avoiding ANY of the following:\n'
+        request_str += 'But avoid:\n'
 
         for cg in constraint_guards:
             for i in range(len(cg)):
@@ -305,7 +317,7 @@ class SpatialRequestPlanner:
                 request_str += subtree_str + '\n'
             request_str += 'OR\n'
         request_str = request_str[:-3]
-
+        """
         return request_str
 
     def prune_edge(self, edge):
@@ -345,8 +357,8 @@ class SpatialRequestPlanner:
         # register observation, we use the original dfa so it can use pruned edges
         node_cur = self.planner.current_state
         symbol = self.create_planner_obs()
-        print("GENERATED OBSERVATION: ", symbol, self.trace_ap)
-        self.viz_objects()
+        #print("GENERATED OBSERVATION: ", symbol, self.trace_ap)
+        #self.viz_objects()
 
         symbol_ap = self.trace_ap
         for succ in self.orig_dfa.successors(node_cur):
@@ -402,7 +414,7 @@ class SpatialRequestPlanner:
                     # if we found a point, good!
                     if target_point is not None:
                         print("Found a point for ",obj_name, "!")
-                        self.visualize_map(target_map, target_point, self.graspable_objects)
+                        #self.visualize_map(target_map, target_point, self.graspable_objects)
                         return Command(CommandType.EXECUTE, obj_name=obj_name, new_pos=target_point, edge=edge)
             
             # this edge is completely impossible by moving a single object, we prune the edge from the automaton 
