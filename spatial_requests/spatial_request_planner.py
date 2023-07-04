@@ -2,6 +2,7 @@ from spatial_spec.logic import Spatial
 from spatial_spec.automaton_planning import AutomatonPlanner
 from spatial_requests.command import Command, CommandType
 from spatial_requests.guard_utility import reduce_set_of_guards, sog_fits_to_guard
+from spatial_spec.geometry import Polygon, PolygonCollection, StaticObject
 
 import copy
 import os
@@ -17,6 +18,7 @@ class SpatialRequestPlanner:
     def __init__(self, spec, graspable_objects, bounds, samples):
         self.spatial = Spatial(quantitative=True)
         self.planner = AutomatonPlanner()
+        self.bounds = bounds
         self.pruned_edges = {}
 
         grammar = os.path.dirname(__file__) + "/spatial.lark"
@@ -39,6 +41,8 @@ class SpatialRequestPlanner:
         # object initialization - spatial variables
         for name, grasp_obj in self.graspable_objects.items():
             self.spatial.assign_variable(name, grasp_obj.get_static_shape())
+        
+        self.define_areas()
 
         # this dictionary contains a variable name to spatial tree mapping
         self.spatial_vars = self.planner.get_variable_to_tree_dict()
@@ -52,11 +56,32 @@ class SpatialRequestPlanner:
         # before you ask anything from the automaton, provide a initial observation of each spatial sub-formula
         self.planner.dfa_step(self.create_planner_obs(), self.trace_ap)
 
+    def define_areas(self):
+        # define phantom regions
+        x_min = self.bounds[0]
+        x_max = self.bounds[1]
+        y_min = self.bounds[2]
+        y_max = self.bounds[3]
+        x_mid = x_min + (x_max - x_min) * 0.5
+        y_mid = y_min + (y_max - y_min) * 0.5
+        
+        bottom_left_corner = Polygon(np.asarray([[x_min, y_mid],[x_min, y_max],[x_mid, y_max],[x_mid, y_mid]]))
+        bottom_right_corner = Polygon(np.asarray([[x_mid, y_mid],[x_mid, y_max],[x_max, y_max],[x_max, y_mid]]))
+        top_left_corner = Polygon(np.asarray([[x_min, y_min],[x_min, y_mid],[x_mid, y_mid],[x_mid, y_min]]))
+        top_right_corner = Polygon(np.asarray([[x_mid, y_min],[x_mid, y_mid],[x_max, y_mid],[x_max, y_min]]))
+
+        # top and bottom are swapped, but it worked that way, sorry future person...
+        self.spatial.assign_variable("top_left_corner", StaticObject(PolygonCollection({top_left_corner})))
+        self.spatial.assign_variable("top_right_corner", StaticObject(PolygonCollection({top_right_corner})))
+        self.spatial.assign_variable("bottom_left_corner", StaticObject(PolygonCollection({bottom_left_corner})))
+        self.spatial.assign_variable("bottom_right_corner", StaticObject(PolygonCollection({bottom_right_corner})))
+
     def create_planner_obs(self):
         # set objects in spatial
         self.spatial.reset_spatial_dict()
         for name, obj in self.graspable_objects.items():
             self.spatial.assign_variable(name, obj.get_static_shape())
+        self.define_areas()
 
         obs = ''
         for var_ap in self.trace_ap:
@@ -88,7 +113,7 @@ class SpatialRequestPlanner:
     def get_relevant_objects(self, targets):
         """Returns the relevant object names from a set of target boolean configurations"""
         relv_objs = set()
-        unmovable_objects = [] #TODO: add those somehow
+        unmovable_objects = ["banana", "top_left_corner", "top_right_corner", "bottom_left_corner", "bottom_right_corner"]
         dfa_ap = self.planner.get_dfa_ap()
 
         for trgt in targets:
@@ -357,7 +382,6 @@ class SpatialRequestPlanner:
         # register observation, we use the original dfa so it can use pruned edges
         node_cur = self.planner.current_state
         symbol = self.create_planner_obs()
-        #print("GENERATED OBSERVATION: ", symbol, self.trace_ap)
         #self.viz_objects()
 
         symbol_ap = self.trace_ap

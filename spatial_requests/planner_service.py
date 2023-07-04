@@ -62,6 +62,7 @@ class PlannerService:
             
         # create planner
         self.planner = SpatialRequestPlanner(spec, objects, bounds, samples=500)
+
         return {
             "response": "ack",
             "info": "The planner is succesfully initialized.",
