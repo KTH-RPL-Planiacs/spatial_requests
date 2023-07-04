@@ -7,6 +7,12 @@ import zmq
 import json
 import numpy as np
 
+def preprocess_points(points):
+    """Flips Y axis (opencv) and reshapes data"""
+    shaped = np.squeeze(np.asarray(points), axis=1))
+    flipped_y = shaped[:,1] * -1
+    return flipped_y
+
 class PlannerService:
 
     def on_request(self, message):
@@ -35,19 +41,20 @@ class PlannerService:
         bounds = [ws[0][0], ws[1][0], ws[0][1], ws[1][1]]
 
         # objects in scene
+        assert "banana" in msg and "brick" in msg and "hammer" in msg, "Not all objects are included."
         objects = [
             ProjectedObject(
                 name='banana',
                 color='y',
-                proj_points=np.squeeze(np.asarray(msg["banana"]), axis=1)),
+                proj_points=preprocess_points(msg["banana"]),
             ProjectedObject(
                 name='brick',
                 color='b',
-                proj_points=np.squeeze(np.asarray(msg["brick"]), axis=1)),
+                proj_points=preprocess_points(msg["brick"]),
             ProjectedObject(
                 name='hammer',
                 color='r',
-                proj_points=np.squeeze(np.asarray(msg["hammer"]), axis=1)),
+                proj_points=preprocess_points(msg["hammer"]),
         ]
             
         # create planner
@@ -60,18 +67,20 @@ class PlannerService:
 
     def on_observation(self, msg):
         assert self.planner is not None, "Please send an init message first"
-        objects = [
+        assert "banana" in msg and "brick" in msg and "hammer" in msg, "Not all objects are included."
+            objects = [
             ProjectedObject(
                 name='banana',
                 color='y',
-                proj_points=np.squeeze(np.asarray(msg["banana"]), axis=1)),        ProjectedObject(
+                proj_points=preprocess_points(msg["banana"]),
+            ProjectedObject(
                 name='brick',
                 color='b',
-                proj_points=np.squeeze(np.asarray(msg["brick"]), axis=1)),
+                proj_points=preprocess_points(msg["brick"]),
             ProjectedObject(
                 name='hammer',
                 color='r',
-                proj_points=np.squeeze(np.asarray(msg["hammer"]), axis=1)),
+                proj_points=preprocess_points(msg["hammer"]),
         ]
         self.planner.register_observation(objects)
         return {
