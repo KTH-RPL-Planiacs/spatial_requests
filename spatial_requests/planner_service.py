@@ -38,7 +38,7 @@ class PlannerService:
 
         # workspace bounds
         ws = msg["workspace"]
-        bounds = [ws[0][0], ws[1][0], ws[0][1], ws[1][1]]
+        bounds = [ws[0][0], ws[1][0], ws[0][1]*-1, ws[1][1]*-1] # flip y axis (opencv)
 
         # objects in scene
         assert "banana" in msg and "brick" in msg and "hammer" in msg, "Not all objects are included."
@@ -105,7 +105,7 @@ class PlannerService:
                 "spec_satisfied": self.planner.currently_accepting(),
                 "info": "Move the specified object to new_pos.",
                 "object_name": command.name,
-                "new_pos": list(command.new_pos) 
+                "new_pos": list(command.new_pos[:,1]*-1) # flip y axis (opencv)
             }
         elif command.type == CommandType.REQUEST:
             return {
