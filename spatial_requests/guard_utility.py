@@ -1,3 +1,5 @@
+import copy
+
 def reduce_set_of_guards(sog):
     if not sog:
         return {}
@@ -104,3 +106,35 @@ def replace_guard_bit(guard, bit, lit):
     new_guard[bit] = lit
     new_guard = ''.join(new_guard)
     return new_guard
+
+def sog_fits_to_guard(guard, sog, guard_ap, sog_ap):
+    """
+    checks if a guard fits to a set of guards, including undecided bits denoted as X
+    Args:
+        guard: A single guard. Example 'X01'
+        sog: A set of guards Example {'001','101'}
+        guard_ap: atomic propositions of the guard
+        sog_ap: atomic propositions of the set of guards
+    Returns:
+        A subset of the set of guards matching to the single guard
+    """
+
+    guards = copy.deepcopy(sog)
+
+    # check if this guard fits to one of the guards
+    for i, g_value in enumerate(guard):
+        if g_value == 'X':
+            continue
+        if guard_ap[i] in sog_ap:
+            j = sog_ap.index(guard_ap[i])
+            wrong_guards = []
+            for guard in guards:
+                if guard[j] != 'X' and guard[j] != g_value:
+                    # if a synth guard is not matching to the current config, mark for removal
+                    wrong_guards.append(guard)
+            # remove marked guards
+            for wg in wrong_guards:
+                guards.remove(wg)
+
+    return guards
+

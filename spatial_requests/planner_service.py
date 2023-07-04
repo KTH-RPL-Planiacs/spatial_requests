@@ -29,6 +29,9 @@ class PlannerService:
         elif request["action"] == "plan_request":
             print("\nReceived planning request.")        
             response = self.on_plan(request)
+        elif request["action"] == "grasp_failed":
+            print("\n Received grasp failure notification.")
+            response = self.on_fail(request)
 
         return json.dumps(response)
     
@@ -92,6 +95,7 @@ class PlannerService:
     def on_plan(self, msg):
         assert self.planner is not None, "Please send an init message first"
         command = self.planner.get_next_step()
+        self.last_command = command
 
         if command.type == CommandType.NONE:
             return {
@@ -117,6 +121,20 @@ class PlannerService:
             }
 
         return {}
+
+    def on_fail(self, msg):
+        assert self.planner is not None, "Please send an init message first"
+        assert self.last_command is not None, "Please send an action request first"
+        assert self.last_command.edge is not None, "Last command was not an execute request"
+
+        self.planner.prune_edge(self.last_command.edge)
+
+        return {
+            "response": "ack",
+            "spec_satisfied": self.planner.currently_accepting(),
+            "info": "Grasp failure recognized.",  
+        }
+
 
 
 def main():

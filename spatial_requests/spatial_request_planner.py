@@ -1,7 +1,7 @@
 from spatial_spec.logic import Spatial
 from spatial_spec.automaton_planning import AutomatonPlanner
 from spatial_requests.command import Command, CommandType
-from spatial_requests.guard_utility import reduce_set_of_guards
+from spatial_requests.guard_utility import reduce_set_of_guards, sog_fits_to_guard
 
 import copy
 import os
@@ -53,6 +53,11 @@ class SpatialRequestPlanner:
         self.planner.dfa_step(self.create_planner_obs(), self.trace_ap)
 
     def create_planner_obs(self):
+        # set objects in spatial
+        self.spatial.reset_spatial_dict()
+        for name, obj in self.graspable_objects.items():
+            self.spatial.assign_variable(name, obj.get_static_shape())
+
         obs = ''
         for var_ap in self.trace_ap:
             subtree = self.spatial_vars[var_ap]
@@ -207,6 +212,16 @@ class SpatialRequestPlanner:
         plt.colorbar(con)
         plt.show()
 
+    def viz_objects(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        # plot objects
+        for proj_obj in self.graspable_objects.values():
+            proj_obj.shape.plot(ax, label=False, color=proj_obj.color)
+
+        plt.autoscale()
+        plt.show()
+
     def find_smallest_request(self, node_cur):
         possible_nodes = {}
 
@@ -327,8 +342,18 @@ class SpatialRequestPlanner:
         for obj in object_list:
             self.graspable_objects[obj.name] = obj
         
-        # register observation
-        self.planner.dfa_step(self.create_planner_obs(), self.trace_ap)   
+        # register observation, we use the original dfa so it can use pruned edges
+        node_cur = self.planner.current_state
+        symbol = self.create_planner_obs()
+        print("GENERATED OBSERVATION: ", symbol, self.trace_ap)
+        self.viz_objects()
+
+        symbol_ap = self.trace_ap
+        for succ in self.orig_dfa.successors(node_cur):
+            # directly applying the first edge that fits works because the dfa is deterministic!
+            if sog_fits_to_guard(symbol, self.orig_dfa.edges[node_cur, succ]['guard'], self.trace_ap, self.orig_dfa.graph['ap']):
+                self.planner.current_state = succ
+                break
 
     def get_next_step(self) -> Command:
         print("Searching for target transition...")
