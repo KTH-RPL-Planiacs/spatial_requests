@@ -46,41 +46,41 @@ class PlannerService:
             ProjectedObject(
                 name='banana',
                 color='y',
-                proj_points=preprocess_points(msg["banana"]),
+                proj_points=preprocess_points(msg["banana"])),
             ProjectedObject(
                 name='brick',
                 color='b',
-                proj_points=preprocess_points(msg["brick"]),
+                proj_points=preprocess_points(msg["brick"])),
             ProjectedObject(
                 name='hammer',
                 color='r',
-                proj_points=preprocess_points(msg["hammer"]),
+                proj_points=preprocess_points(msg["hammer"])),
         ]
             
         # create planner
         self.planner = SpatialRequestPlanner(spec, objects, bounds, samples=500)
         return {
             "response": "ack",
-            "info": "The planner is succesfully initialized." 
-            "spec_satisfied":self.planner.currently_accepting()
+            "info": "The planner is succesfully initialized.",
+            "spec_satisfied" : self.planner.currently_accepting()
             }
 
     def on_observation(self, msg):
         assert self.planner is not None, "Please send an init message first"
         assert "banana" in msg and "brick" in msg and "hammer" in msg, "Not all objects are included."
-            objects = [
+        objects = [
             ProjectedObject(
                 name='banana',
                 color='y',
-                proj_points=preprocess_points(msg["banana"]),
+                proj_points=preprocess_points(msg["banana"])),
             ProjectedObject(
                 name='brick',
                 color='b',
-                proj_points=preprocess_points(msg["brick"]),
+                proj_points=preprocess_points(msg["brick"])),
             ProjectedObject(
                 name='hammer',
                 color='r',
-                proj_points=preprocess_points(msg["hammer"]),
+                proj_points=preprocess_points(msg["hammer"])),
         ]
         self.planner.register_observation(objects)
         return {
