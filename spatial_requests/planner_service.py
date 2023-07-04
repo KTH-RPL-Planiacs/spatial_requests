@@ -27,16 +27,14 @@ class PlannerService:
         return json.dumps(response)
     
     def on_init(self, msg):
-        #spec = "(F ((hammer leftof brick) & (hammer dist brick <= 10.0)))"
-        #spec += "& (G (!(hammer ovlp banana)))"
-        #spec += "& (G (!(hammer ovlp brick)))"
-        #spec += "& (G (!(brick ovlp banana)))"
-
+        # load spec
         spec = msg["specification"]
 
+        # workspace bounds
         ws = msg["workspace"]
         bounds = [ws[0][0], ws[1][0], ws[0][1], ws[1][1]]
 
+        # objects in scene
         objects = [
             ProjectedObject(
                 name='banana',
@@ -52,8 +50,13 @@ class PlannerService:
                 proj_points=np.squeeze(np.asarray(msg["hammer"]), axis=1)),
         ]
             
+        # create planner
         self.planner = SpatialRequestPlanner(spec, objects, bounds, samples=500)
-        return {"response": "ack"}
+        return {
+            "response": "ack",
+            "info": "The planner is succesfully initialized." 
+            "spec_satisfied":self.planner.currently_accepting()
+            }
 
     def on_observation(self, msg):
         assert self.planner is not None, "Please send an init message first"
@@ -61,8 +64,7 @@ class PlannerService:
             ProjectedObject(
                 name='banana',
                 color='y',
-                proj_points=np.squeeze(np.asarray(msg["banana"]), axis=1)),
-            ProjectedObject(
+                proj_points=np.squeeze(np.asarray(msg["banana"]), axis=1)),        ProjectedObject(
                 name='brick',
                 color='b',
                 proj_points=np.squeeze(np.asarray(msg["brick"]), axis=1)),
@@ -75,7 +77,7 @@ class PlannerService:
         return {
             "response": "ack",
             "spec_satisfied": self.planner.currently_accepting(),
-            "info": "Object data received.",  
+            "info": "Object data received. Spec satisfaction might have changed.",  
         }
     
     def on_plan(self, msg):
@@ -86,7 +88,7 @@ class PlannerService:
             return {
                 "response": "none",
                 "spec_satisfied": self.planner.currently_accepting(),
-                "info": "Nothing to be done.",
+                "info": "Nothing to be done, either because the specification is satisfied or it is impossible to satisfy.",
             }
         elif command.type == CommandType.EXECUTE:
             return {
