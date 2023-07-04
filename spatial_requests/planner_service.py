@@ -9,9 +9,9 @@ import numpy as np
 
 def preprocess_points(points):
     """Flips Y axis (opencv) and reshapes data"""
-    shaped = np.squeeze(np.asarray(points), axis=1)
-    flipped_y = shaped[:,1] * -1
-    return flipped_y
+    points = np.squeeze(np.asarray(points), axis=1)
+    points[:,1] *= -1
+    return points
 
 class PlannerService:
 
@@ -100,12 +100,13 @@ class PlannerService:
                 "info": "Nothing to be done, either because the specification is satisfied or it is impossible to satisfy.",
             }
         elif command.type == CommandType.EXECUTE:
+            new_pos = [command.new_pos[0], command.new_pos[1]*-1] # flip y axis (opencv)
             return {
                 "response": "execute",
                 "spec_satisfied": self.planner.currently_accepting(),
                 "info": "Move the specified object to new_pos.",
                 "object_name": command.name,
-                "new_pos": list(command.new_pos[:,1]*-1) # flip y axis (opencv)
+                "new_pos": new_pos 
             }
         elif command.type == CommandType.REQUEST:
             return {
